@@ -122,7 +122,7 @@ def show_topics(vectorizer, lda_model, num):
     # Topic number
     df_topic_keywords.index = ['Topic '+str(i) for i in range(df_topic_keywords.shape[0])]
     # Save the dataframe
-    df_topic_keywords.to_csv("topic_words.csv",index=False)
+    df_topic_keywords.to_csv("topic_words.csv",index=True)
     return df_topic_keywords
 
 """
