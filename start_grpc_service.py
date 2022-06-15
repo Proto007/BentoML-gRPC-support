@@ -71,4 +71,25 @@ for name,api in svc.apis.items():
 
 os.system("python -m grpc_tools.protoc -I./protos --python_out=. --grpc_python_out=. protos/bentoML.proto")
 
+import grpc
+import bentoML_pb2
+import bentoML_pb2_grpc
+from concurrent import futures
 
+class BentoMLServicer(bentoML_pb2_grpc.BentoMLServicer):
+    def api_func(self, request, context):
+        out=svc_func(request.text_Input)
+        out=json.dumps(out.tolist())
+        return bentoML_pb2.Output(numpyArr_Output=out)
+           
+# Create a server and add the lda_model to the server
+server=grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+bentoML_pb2_grpc.add_BentoMLServicer_to_server(BentoMLServicer(),server)
+server.add_insecure_port('[::]:8000')
+
+# Start server and keep the server running until terminated
+server.start()
+print("Starting server...")
+print("Listening on port 8000...")
+server.wait_for_termination()
+        
