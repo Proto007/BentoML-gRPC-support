@@ -63,5 +63,12 @@ def generate_protobuf(input_type,output_type):
         )
     return input_name, output_name
 
+for name,api in svc.apis.items():    
+    # Create a server and add the lda_model to the server
+    i,o=generate_protobuf(api.input._init_str,api.output._init_str)
+    svc_func=api.func
 
-        
+
+os.system("python -m grpc_tools.protoc -I./protos --python_out=. --grpc_python_out=. protos/bentoML.proto")
+
+
