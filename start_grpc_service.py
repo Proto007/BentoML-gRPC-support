@@ -1,9 +1,14 @@
-from concurrent import futures
 import bentoml
-import grpc
-import lda_model_pb2_grpc
+import os
 import sys
+import json
 
+import numpy as np
+
+"""
+    Load the service
+    Verify user entered correct number of cli arguments and valid service name
+"""
 if(len(sys.argv)!=2):
     print("Invalid number of arguments. Please provide a Service.")
     quit()
@@ -12,24 +17,11 @@ try:
 except:
     raise ValueError("Service is invalid. Try again with a valid Service.")
 
-class GrpcRunner:
-    pass
+"""
+    Functions to generate protobuf content for specific datatypes
+"""
+def get_proto_text(input_type):
+    return f'string text_{input_type} = 1;', f'string text_{input_type}'
 
-for name,api in svc.apis.items():    
-    # Create a server and add the lda_model to the server
-    server=grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    def apiFunc(self,*args,**kwargs): 
-        api.func(*args,**kwargs)
-    setattr(GrpcRunner,name,apiFunc)
-    
-lda_model_pb2_grpc.add_PredictLdaServicer_to_server(GrpcRunner,server)
-server.add_insecure_port('[::]:8000')
-# Start server and keep the server running until terminated
-server.start()
-print("Starting server...")
-print("Listening on port 8000...")
-server.wait_for_termination()
 
-# Generate a proto file based on the runners
-# Generate code from the proto file
-# Generate server and client code
+        
