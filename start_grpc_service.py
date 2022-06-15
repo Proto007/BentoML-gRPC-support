@@ -23,5 +23,6 @@ except:
 def get_proto_text(input_type):
     return f'string text_{input_type} = 1;', f'string text_{input_type}'
 
+def get_proto_numpyArr(input_type):
+    return f'string numpyArr_{input_type} = 1;', f"numpyArr{input_type}"
 
-        
