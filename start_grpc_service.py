@@ -26,3 +26,42 @@ def get_proto_text(input_type):
 def get_proto_numpyArr(input_type):
     return f'string numpyArr_{input_type} = 1;', f"numpyArr{input_type}"
 
+func_dict={
+    "Text()": get_proto_text,
+    "NumpyNdarray()": get_proto_numpyArr
+}
+
+"""
+    Generates protobuf based on given input_type, output_type and function name
+"""
+def generate_protobuf(input_type,output_type):
+    # Verify input_type and output_type are correct
+    if(input_type not in func_dict) or (output_type not in func_dict):
+        if(input_type not in func_dict):
+            print(f"${input_type} is not a valid type")
+        if(output_type not in func_dict):
+            print(f"${output_type} is not a valid type")
+        raise ValueError("Invalid input types.")
+
+    # Map the input and output to the appropriate functions
+    input_proto, input_name=func_dict[input_type]("Input")
+    output_proto, output_name=func_dict[output_type]("Output")
+
+    #Create the protobuf file
+    with open('./protos/bentoML.proto','w') as f:
+        f.write(
+            'syntax = "proto3";\n\n'
+            "message Input{\n"
+                f"\t{input_proto}\n"
+            "}\n\n"
+            "message Output{\n"
+                f"\t{output_proto}\n"
+            "}\n\n"
+            "service BentoML{\n"
+                f"\trpc api_func(Input) returns (Output);\n"
+            "}"
+        )
+    return input_name, output_name
+
+
+        
