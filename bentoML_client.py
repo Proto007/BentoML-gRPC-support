@@ -2,33 +2,54 @@
 import grpc
 from google.protobuf.json_format import MessageToDict
 import numpy as np
-import json
+from io import BytesIO
 
 # Import generated files
 import bentoML_pb2
 import bentoML_pb2_grpc
 
-# Define a channel with the backend server address
+# # Define a channel with the backend server address
 channel=grpc.insecure_channel('localhost:8000')
 stub=bentoML_pb2_grpc.BentoMLStub(channel)
 
-"""
-    Testing String
-"""
-# Test the Api with a query description. 
-# query_string is a PredictTopicRequest protobuf object 
-# description="Nora Stephens’ life is books—she’s read them all—and she is not that type of heroine. Not the plucky one, not the laidback dream girl, and especially not the sweetheart. In fact, the only people Nora is a heroine for are her clients, for whom she lands enormous deals as a cutthroat literary agent, and her beloved little sister Libby. Which is why she agrees to go to Sunshine Falls, North Carolina for the month of August when Libby begs her for a sisters’ trip away—with visions of a small-town transformation for Nora, who she’s convinced needs to become the heroine in her own story. But instead of picnics in meadows, or run-ins with a handsome country doctor or bulging-forearmed bartender, Nora keeps bumping into Charlie Lastra, a bookish brooding editor from back in the city. It would be a meet-cute if not for the fact that they’ve met many times and it’s never been cute. If Nora knows she’s not an ideal heroine, Charlie knows he’s nobody’s hero, but as they are thrown together again and again—in a series of coincidences no editor worth their salt would allow—what they discover might just unravel the carefully crafted stories they’ve written about themselves."
+# """
+#     Testing String
+# """
+# string_data="badaS ma I ,iH"
 
-# query_string=bentoML_pb2.Input(text_Input=description)
+# data=bentoML_pb2.Input(text_Input=string_data)
+
+# response=stub.api_func(data)
+
+# print(response.text_Output)
 
 """
     Testing Numpy
 """
-a="Sadab"
-arr=np.array([[[1,2],a],[[2,3],"b"],[[3,4],"c"]],dtype=object)
-data=bentoML_pb2.Input(numpyArr_Input=json.dumps(arr.tolist()))
+def array_to_bytes(arr):
+    to_bytes=BytesIO()
+    np.save(to_bytes,arr,allow_pickle=True)
+    return to_bytes.getvalue()
 
-# Call the predict function
+def bytes_to_array(bytes_arr):
+    load_bytes=BytesIO(bytes_arr)
+    loaded_arr=np.load(load_bytes,allow_pickle=True)
+    return loaded_arr
+
+arr=np.array([[[1,2,3,4],
+              [5,6,7,8],
+              [9,10,11,12]],
+            [[13,14,15,16],
+             [17,18,19,20],
+             [21,22,23,24]]],dtype=np.int16
+             )
+
+arr1=np.array([[[1,2],"a"],[[2,3],"b"],[[3,4],"c"]],dtype=object)
+
+data=bentoML_pb2.Input(numpyArr_Input=array_to_bytes(arr))
+
+# # Call the predict function
 response=stub.api_func(data)
 
-print(response.numpyArr_Output)
+print(bytes_to_array(response.numpyArr_Output))
+
