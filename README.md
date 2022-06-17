@@ -1,2 +1,8 @@
-# gRPC-Topic-Model
-This repository shows creation of a unary API using gRPC for the topic model created in https://github.com/Proto007/Topic-Modeling-Book-Descriptions
+# Update:
+Working on using provided shape and dtype information to generate protobuf file...
+# BentoML-gRPC-support
+This repository shows progress to extend bentoML service using gRPC.
+
+# Progress with datatypes:
+- [x] Text: Mostly done, will require some testing with other datatypes.
+- [ ] NumpyNdArray: Current implementation uses BytesIO to store numpy array into bytes.
