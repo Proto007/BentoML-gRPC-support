@@ -24,7 +24,17 @@ def get_proto_text(input_type):
     return f"message {input_type}{{\n\tstring text_{input_type} = 1;\n}}\n\n",f'text_{input_type}'
 
 def get_proto_numpyArr(input_type):
-    return f'bytes numpyArr_{input_type} = 1;', f"numpyArr_{input_type}"
+    numpy_to_proto_type={
+        np.double:"double",
+        np.float32: "float",
+        np.int32: "int32",
+        np.int64: "int64",
+        np.uint32: "uint32",
+        np.uint64: "uint64",
+        np.int_:"int32",
+        np.bool_:"bool"
+    }
+    return f"message {input_type}{{\n\tbytes numpyArr_{input_type} = 1;\n}}\n\n",f'numpyArr_{input_type}'
 
 func_dict={
     Text: get_proto_text,
