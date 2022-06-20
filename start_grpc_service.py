@@ -17,59 +17,6 @@ try:
 except:
     raise ValueError("Service is invalid. Try again with a valid Service.")
 
-"""
-    Functions to generate protobuf content for specific datatypes
-"""
-def get_proto_text(input_type):
-    return f'string text_{input_type} = 1;', f'text_{input_type}'
-
-def get_proto_numpyArr(input_type):
-    return f'bytes numpyArr_{input_type} = 1;', f"numpyArr_{input_type}"
-
-func_dict={
-    Text: get_proto_text,
-    NumpyNdarray: get_proto_numpyArr
-}
-
-
-def generate_protobuf(input_type,output_type):
-    """
-    Generates protobuf based on given input_type, output_type and function name
-    """
-    # Verify input_type and output_type are correct
-    if(type(input_type) not in func_dict) or (type(output_type) not in func_dict):
-        if(type(input_type) not in func_dict):
-            print("Input is not a valid type")
-        if(type(output_type) not in func_dict):
-            print("Output is not a valid type")
-        raise ValueError("Invalid input types.")
-
-    # Map the input and output to the appropriate functions
-    input_proto, input_name=func_dict[type(input_type)]("Input")
-    output_proto, output_name=func_dict[type(output_type)]("Output")
-
-    #Create the protobuf file
-    with open('./protos/bentoML.proto','w') as f:
-        f.write(
-            'syntax = "proto3";\n\n'
-            
-            "message Input{\n"
-                f"\t{input_proto}\n"
-            "}\n\n"
-            "message Output{\n"
-                f"\t{output_proto}\n"
-            "}\n\n"
-            "service BentoML{\n"
-                f"\trpc api_func(Input) returns (Output);\n"
-            "}"
-        )
-    return input_name, output_name
-
-for name,api in svc.apis.items():    
-    # Create a server and add the lda_model to the server
-    i,o=generate_protobuf(api.input,api.output)
-    svc_func=api.func
-
 def create_server(server_name:str):
     if server_name[-3:]!=".py":
         raise ValueError("File must be a .py file.")
@@ -80,16 +27,19 @@ import grpc
 import bentoML_pb2
 import bentoML_pb2_grpc
 import numpy as np
-import json
 import bentoml
+import json
 from concurrent import futures
 from io import BytesIO
+from bentoml.io import NumpyNdarray,Text
 
 svc=bentoml.load("{sys.argv[1]}")
 
 for name,api in svc.apis.items():    
     # Create a server and add the lda_model to the server
     svc_func=api.func
+    input_type=api.input
+    output_type=api.output
 
 def array_to_bytes(arr):
     to_bytes=BytesIO()
@@ -101,15 +51,57 @@ def bytes_to_array(bytes_arr):
     loaded_arr=np.load(load_bytes,allow_pickle=True)
     return loaded_arr
 
+supported_datatypes={{
+    np.double:"double",
+    np.float32: "float",
+    np.int32: "int32",
+    np.int64: "int64",
+    np.uint32: "uint32",
+    np.uint64: "uint64",
+    np.int_:"int32",
+    np.bool_:"bool",
+    np.byte:"bytes",
+    np.str_:"string",
+    np.string_:"string"
+}}
+
 class BentoMLServicer(bentoML_pb2_grpc.BentoMLServicer):
     def api_func(self, request, context):
-        input= request.{i}
-        if "numpyArr" in "{i}":
-            input=bytes_to_array(input)
+        input= request.input
+
+        #@TODO: Code that deals with the shape of the array, structured types
+
+        io_type=input.WhichOneof("io_descriptor")
+        if(io_type=="text"):
+            input=input.text
+        elif(io_type=="numpy_ndarray"):
+            input=input.numpy_ndarray
+            input=getattr(input,str(input.array_type)+"_array")
+        else:
+            raise ValueError("Invalid input type.")
+
         output=svc_func(input)
-        if "numpyArr" in "{o}":
-            output=array_to_bytes(output)
-        return bentoML_pb2.Output({o}=output)
+
+        if(type(output_type)==Text):
+            output=bentoML_pb2.BentoServiceMessage(text=output)
+        elif(type(output_type)==NumpyNdarray):
+            found_dtype=""
+            for key in supported_datatypes.keys():
+                if(key==output.dtype):
+                    found_dtype=key
+                    break
+            if(not found_dtype):
+                out=[json.dumps(item.tolist()) for item in output]
+                output=bentoML_pb2.NumpyNdArray(array_type="string_array",string_array=out)
+                output=bentoML_pb2.BentoServiceMessage(numpy_ndarray=output)
+            else:
+                out=bentoML_pb2.NumpyNdArray(**{{"array_type":str(output.dtype),str(output.dtype)+"_array":output}})
+                #get
+                #setattr(out,str(out.array_type)+"_array",output)
+                #out.str(out.array_type)+"_array".extend(output)
+                output=bentoML_pb2.BentoServiceMessage(numpy_ndarray=out)
+
+        return bentoML_pb2.BentoServiceOutput(output=output)
 
 # Create a server and add the lda_model to the server
 server=grpc.server(futures.ThreadPoolExecutor(max_workers=10))
@@ -126,5 +118,5 @@ server.wait_for_termination()
 
 
 os.system("python -m grpc_tools.protoc -I./protos --python_out=. --grpc_python_out=. protos/bentoML.proto")
-create_server("numpy_server.py")
-os.system("python numpy_server.py")   
+create_server("lda_server.py")
+os.system("python lda_server.py")   
