@@ -16,7 +16,7 @@ class ModelClass:
         #     temp.append(str(i[1]).upper())
         #     ret_arr.append(temp)
         # return np.array(ret_arr,dtype=object)
-        return inp
+        return np.array(inp,dtype=np.int32)
 # Create an instance of LdaModelClass
 runner_model=ModelClass()
 
@@ -29,17 +29,7 @@ numpy_model_runner.init_local()
 svc = bentoml.Service("numpy_model_classifier", runners=[numpy_model_runner])
 
 # Specify api input as Text and output as Numpy Array
-@svc.api(input=NumpyNdarray(
-            shape=(2,3,4),
-            enforce_shape=True,
-            dtype=(np.int16),
-            enforce_dtype=True), 
-        output=NumpyNdarray(
-            shape=(2,3,4),
-            enforce_shape=True,
-            dtype=(np.int16),
-            enforce_dtype=True
-         ))
+@svc.api(input=NumpyNdarray(), output=NumpyNdarray())
 def predict(input_series) -> np.ndarray:
     return numpy_model_runner.predict.run(input_series)
      
