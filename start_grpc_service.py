@@ -21,10 +21,20 @@ except:
     Functions to generate protobuf content for specific datatypes
 """
 def get_proto_text(input_type):
-    return f'string text_{input_type} = 1;', f'text_{input_type}'
+    return f"message {input_type}{{\n\tstring text_{input_type} = 1;\n}}\n\n",f'text_{input_type}'
 
 def get_proto_numpyArr(input_type):
-    return f'bytes numpyArr_{input_type} = 1;', f"numpyArr_{input_type}"
+    numpy_to_proto_type={
+        np.double:"double",
+        np.float32: "float",
+        np.int32: "int32",
+        np.int64: "int64",
+        np.uint32: "uint32",
+        np.uint64: "uint64",
+        np.int_:"int32",
+        np.bool_:"bool"
+    }
+    return f"message {input_type}{{\n\tbytes numpyArr_{input_type} = 1;\n}}\n\n",f'numpyArr_{input_type}'
 
 func_dict={
     Text: get_proto_text,
@@ -52,13 +62,8 @@ def generate_protobuf(input_type,output_type):
     with open('./protos/bentoML.proto','w') as f:
         f.write(
             'syntax = "proto3";\n\n'
-            
-            "message Input{\n"
-                f"\t{input_proto}\n"
-            "}\n\n"
-            "message Output{\n"
-                f"\t{output_proto}\n"
-            "}\n\n"
+            f"{input_proto}"
+            f"{output_proto}"
             "service BentoML{\n"
                 f"\trpc api_func(Input) returns (Output);\n"
             "}"
