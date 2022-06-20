@@ -12,9 +12,22 @@ import bentoML_pb2_grpc
 channel=grpc.insecure_channel('localhost:8000')
 stub=bentoML_pb2_grpc.BentoMLStub(channel)
 
-# """
-#     Testing String
-# """
+"""
+    Testing LDA Model
+"""
+# query_description="If happy ever after did exist, I was to be holding you like this."
+
+# query_description=bentoML_pb2.BentoServiceInput(input=bentoML_pb2.BentoServiceMessage(text=query_description))
+
+# response=stub.api_func(query_description)
+
+# print(response.output.string_array)
+
+# [[["a","b"],0.1],[["a","b"],0.1]]
+
+"""
+    Testing String
+"""
 # string_data="badaS ma I ,iH"
 
 # data=bentoML_pb2.Input(text_Input=string_data)
@@ -43,13 +56,13 @@ arr=np.array([[[1,2,3,4],
              [17,18,19,20],
              [21,22,23,24]]],dtype=np.int16
              )
-
-arr1=np.array([[[1,2],"a"],[[2,3],"b"],[[3,4],"c"]],dtype=object)
-
-data=bentoML_pb2.Input(numpyArr_Input=array_to_bytes(arr))
-
-# # Call the predict function
+arr1=np.array([1,2,3,4,5],dtype=np.int32)
+arr1=bentoML_pb2.NumpyNdArray(array_type="int32",int32_array=arr1)
+# arr1=np.array([[[1,2],"a"],[[2,3],"b"],[[3,4],"c"]],dtype=object)
+mess=bentoML_pb2.BentoServiceMessage(numpy_ndarray=arr1)
+data=bentoML_pb2.BentoServiceInput(input=mess)
+# Call the predict function
 response=stub.api_func(data)
-
-print(bytes_to_array(response.numpyArr_Output))
+print(response.output.numpy_ndarray)
+# print(bytes_to_array(response.numpyArr_Output))
 
