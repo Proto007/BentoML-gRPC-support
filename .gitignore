@@ -2,3 +2,6 @@ __pycache__
 model.html
 bentoML_pb2_grpc.py
 bentoML_pb2.py
+protos/bentoML.proto
+io_descriptors_pb2.py
+server.py
