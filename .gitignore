@@ -1,5 +1,4 @@
 __pycache__
 model.html
-protos/bentoML.proto
 bentoML_pb2_grpc.py
 bentoML_pb2.py
