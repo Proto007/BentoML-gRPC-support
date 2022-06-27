@@ -125,3 +125,13 @@ def proto_to_arr(proto_arr):
         elif(type(return_arr[i])==io_descriptors_pb2.Tuple):
             return_arr[i]=handle_tuple(return_arr[i])
     return return_arr
+
+def array_to_bytes(arr):
+    to_bytes=BytesIO()
+    np.save(to_bytes,arr,allow_pickle=True)
+    return to_bytes.getvalue()
+
+def bytes_to_array(bytes_arr):
+    load_bytes=BytesIO(bytes_arr)
+    loaded_arr=np.load(load_bytes,allow_pickle=True)
+    return loaded_arr
