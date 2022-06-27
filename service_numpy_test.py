@@ -9,14 +9,8 @@ from bentoml.io import NumpyNdarray
 # Create a class that can be used for runner
 class ModelClass:
     def predict(self, inp:np.ndarray):
-        # ret_arr=[]
-        # for i in inp:
-        #     temp=[]
-        #     temp.append(i[0][0]+i[0][1])
-        #     temp.append(str(i[1]).upper())
-        #     ret_arr.append(temp)
-        # return np.array(ret_arr,dtype=object)
-        return np.array(inp,dtype=np.int32)
+        return np.array(inp,dtype=inp.dtype)
+
 # Create an instance of LdaModelClass
 runner_model=ModelClass()
 
