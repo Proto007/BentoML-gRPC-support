@@ -81,3 +81,47 @@ def arr_to_proto(arr):
         raise ValueError("Entered invalid array of inconsistent shape.")
     
     return return_arr
+
+def handle_tuple(proto_tuple):
+    tuple_arr=[]
+    [tuple_arr.append(i) for i in getattr(proto_tuple,"value_")]
+    
+    if(not tuple_arr):
+        raise ValueError("Provided tuple is either empty or invalid.")
+    
+    return_arr=[]
+
+    for i in range(len(tuple_arr)):
+        val=getattr(tuple_arr[i],tuple_arr[i].WhichOneof("dtype"))
+        
+        if(tuple_arr[i].WhichOneof("dtype")=="timestamp_"):
+            val=Timestamp.ToDatetime(val)
+        elif(tuple_arr[i].WhichOneof("dtype")=="duration_"):
+            val=Duration.ToTimedelta(val)
+
+        if(type(val)==io_descriptors_pb2.Array):
+            val=proto_to_arr(val)
+        elif(type(val)==io_descriptors_pb2.Tuple):
+            val=handle_tuple(val)
+        return_arr.append(val)
+    
+    return return_arr
+
+def proto_to_arr(proto_arr):
+    return_arr=[]
+    [return_arr.append(i) for i in getattr(proto_arr,proto_arr.dtype)]
+    
+    if(proto_arr.dtype=="timestamp_"):
+        return_arr=[Timestamp.ToDatetime(dt) for dt in return_arr]
+    elif(proto_arr.dtype=="duration_"):
+        return_arr=[Duration.ToTimedelta(td) for td in return_arr]
+    
+    if(not return_arr):
+        raise ValueError("Provided array is either empty or invalid")
+
+    for i in range(len(return_arr)):
+        if(type(return_arr[i])==io_descriptors_pb2.Array):
+            return_arr[i]=proto_to_arr(return_arr[i])
+        elif(type(return_arr[i])==io_descriptors_pb2.Tuple):
+            return_arr[i]=handle_tuple(return_arr[i])
+    return return_arr
