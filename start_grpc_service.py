@@ -33,9 +33,7 @@ import "io_descriptors.proto";
 message BentoServiceMessage {{
 	oneof io_descriptor{{
 		string text=1;
-        Value value=2;
-        Array array=3;
-		Tuple tuple=4;
+        NumpyNdarray array=2;
 	}}
 }}
 
