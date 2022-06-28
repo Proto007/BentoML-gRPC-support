@@ -24,7 +24,10 @@ supported_datatypes={
     #@TODO : complex types, bytestring, signed int, lower byte integers(8,16)
 }
 
-def is_supported(datatype):
+def is_supported(datatype:type)->str:
+    """
+    Checks if the given type is within `supported_datatypes` dictionary
+    """
     if not datatype:
         return ""
     found_dtype=""
@@ -34,8 +37,10 @@ def is_supported(datatype):
             break
     return found_dtype
 
-# TODO: Add support for datetime and timedelta
-def create_tuple_proto(tuple):
+def create_tuple_proto(tuple)->io_descriptors_pb2.Tuple:
+    """
+    Convert given tuple list or tuple array to protobuf
+    """
     if len(tuple)==0:
         raise ValueError("Provided tuple is either empty or invalid.")
     tuple_arr=[]
@@ -65,7 +70,10 @@ def create_tuple_proto(tuple):
         
     return io_descriptors_pb2.Tuple(value_=tuple_arr)
 
-def arr_to_proto(arr):
+def arr_to_proto(arr)->io_descriptors_pb2.NumpyNdarray:
+    """
+    Convert given array or list to protobuf
+    """
     if len(arr)==0:
         raise ValueError("Provided array is either empty or invalid.")
     if(not all(isinstance(x,type(arr[0]))for x in arr)):
@@ -113,7 +121,10 @@ def arr_to_proto(arr):
     
     return return_arr
 
-def handle_tuple(proto_tuple):
+def handle_tuple(proto_tuple:io_descriptors_pb2.Tuple):
+    """
+    Convert given protobuf tuple to a tuple list
+    """
     tuple_arr=[]
     [tuple_arr.append(i) for i in getattr(proto_tuple,"value_")]
     
@@ -138,7 +149,10 @@ def handle_tuple(proto_tuple):
     
     return return_arr
 
-def proto_to_arr(proto_arr):
+def proto_to_arr(proto_arr:io_descriptors_pb2.NumpyNdarray):
+    """
+    Convert given protobuf array to python list
+    """
     return_arr=[]
     [return_arr.append(i) for i in getattr(proto_arr,proto_arr.dtype)]
     
@@ -156,13 +170,3 @@ def proto_to_arr(proto_arr):
         elif(type(return_arr[i])==io_descriptors_pb2.Tuple):
             return_arr[i]=handle_tuple(return_arr[i])
     return return_arr
-
-def array_to_bytes(arr):
-    to_bytes=BytesIO()
-    np.save(to_bytes,arr,allow_pickle=True)
-    return to_bytes.getvalue()
-
-def bytes_to_array(bytes_arr):
-    load_bytes=BytesIO(bytes_arr)
-    loaded_arr=np.load(load_bytes,allow_pickle=True)
-    return loaded_arr
