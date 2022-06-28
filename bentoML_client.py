@@ -23,11 +23,10 @@ stub=bentoML_pb2_grpc.BentoMLStub(channel)
 """
 query_description="If happy ever after did exist, I was to be holding you like this."
 
-query_description=bentoML_pb2.BentoServiceInput(input=bentoML_pb2.BentoServiceMessage(text=query_description))
-
-response=stub.predict(query_description)
-
-print(proto_to_arr(response.output.array))
+def test_lda(query_description=query_description):
+    query_description=bentoML_pb2.BentoServiceInput(input=bentoML_pb2.BentoServiceMessage(text=query_description))
+    response=stub.predict(query_description)
+    print(proto_to_arr(response.output.array))
 """
     Testing String
 """
@@ -45,53 +44,53 @@ print(proto_to_arr(response.output.array))
 # Test arrays
 arr1=[1,2,3,4,5]
 arr1_numpy=np.array(arr1)
-arr1_proto=io_descriptors_pb2.Array(dtype="i4",i4=arr1_numpy)
+arr1_proto=io_descriptors_pb2.NumpyNdarray(dtype="sint32_",sint32_=arr1_numpy)
 a1=[arr1,arr1_numpy,arr1_proto]
 
 arr2=[[1,2],[3,4],[5,6]]
 arr2_numpy=np.array(arr2)
 subarr_list_proto=[]
 for i in arr2_numpy:
-    subarr_list_proto.append(io_descriptors_pb2.Array(dtype="i4",i4=i))
-arr2_proto=io_descriptors_pb2.Array(dtype="array_",array_=subarr_list_proto)
+    subarr_list_proto.append(io_descriptors_pb2.NumpyNdarray(dtype="sint32_",sint32_=i))
+arr2_proto=io_descriptors_pb2.NumpyNdarray(dtype="array_",array_=subarr_list_proto)
 a2=[arr2,arr2_numpy,arr2_proto]
 
 arr3=[[1,"a"],[2,"b"]]
 arr3_numpy=np.array([(1,"a"),(2,"b")],dtype=[("num","i8"),("char","U10")])
 tup_list=[]
 for i in arr3:
-    item1=io_descriptors_pb2.Value(i4=i[0])
+    item1=io_descriptors_pb2.Value(sint64_=i[0])
     item2=io_descriptors_pb2.Value(string_=i[1])
     tup_=io_descriptors_pb2.Tuple(value_=[item1,item2])
     tup_list.append(tup_)
-arr3_proto=io_descriptors_pb2.Array(dtype="tuple_",tuple_=tup_list)
+arr3_proto=io_descriptors_pb2.NumpyNdarray(dtype="tuple_",tuple_=tup_list)
 a3=[arr3,arr3_numpy,arr3_proto]
 
 arr4=[[["a","b"],0.1],[["A","B"],0.2]]
 arr4_numpy=np.array(arr4,dtype=object)
 arr4_proto=[]
 for i in arr4:
-    item1_arr=io_descriptors_pb2.Array(dtype="string_",string_=i[0])
+    item1_arr=io_descriptors_pb2.NumpyNdarray(dtype="string_",string_=i[0])
     item1=io_descriptors_pb2.Value(array_=item1_arr)
-    item2=io_descriptors_pb2.Value(f8=i[1])
+    item2=io_descriptors_pb2.Value(double_=i[1])
     proto_tuple=io_descriptors_pb2.Tuple(value_=[item1,item2])
     arr4_proto.append(proto_tuple)
-arr4_proto=io_descriptors_pb2.Array(dtype="tuple_",tuple_=arr4_proto)
+arr4_proto=io_descriptors_pb2.NumpyNdarray(dtype="tuple_",tuple_=arr4_proto)
 a4=[arr4,arr4_numpy,arr4_proto]
 
 arr5=[[[[1,2],"b"],0.1],[[[3,4],"B"],0.2]]
 arr5_numpy=np.array(arr5,dtype=object)
 arr5_proto=[]
 for i in arr5_numpy:
-    val1_arr=io_descriptors_pb2.Array(dtype="i8",i8=i[0][0])
+    val1_arr=io_descriptors_pb2.NumpyNdarray(dtype="sint64_",sint64_=i[0][0])
     val1=io_descriptors_pb2.Value(array_=val1_arr)
     val2=io_descriptors_pb2.Value(string_=i[0][1])
     tup_=io_descriptors_pb2.Tuple(value_=[val1,val2])
     item1=io_descriptors_pb2.Value(tuple_=tup_)
-    item2=io_descriptors_pb2.Value(f8=i[1])
+    item2=io_descriptors_pb2.Value(double_=i[1])
     proto_tuple=io_descriptors_pb2.Tuple(value_=[item1,item2])
     arr5_proto.append(proto_tuple)
-arr5_proto=io_descriptors_pb2.Array(dtype="tuple_",tuple_=arr5_proto)
+arr5_proto=io_descriptors_pb2.NumpyNdarray(dtype="tuple_",tuple_=arr5_proto)
 a5=[arr5,arr5_numpy,arr5_proto]
 
 arr6_numpy=np.arange('2005-02-01', '2005-03-02', dtype='datetime64[h]')
@@ -103,7 +102,7 @@ for i in arr6:
     t=Timestamp()
     t.FromDatetime(i)
     arr6_proto.append(t)
-arr6_proto=io_descriptors_pb2.Array(dtype="timestamp_",timestamp_=arr6_proto)    
+arr6_proto=io_descriptors_pb2.NumpyNdarray(dtype="timestamp_",timestamp_=arr6_proto)    
 a6=[arr6,arr6_numpy,arr6_proto]
 
 arr7=[[[[datetime.datetime(2020, 5, 17),datetime.datetime(2020, 5, 18)],"b"],0.1],[[[datetime.datetime(2020, 5, 19),datetime.datetime(2020, 5, 20)],"B"],0.2]]
@@ -115,15 +114,15 @@ for i in arr7_numpy:
         t=Timestamp()
         t.FromDatetime(x)
         t_arr.append(t)
-    val1_arr=io_descriptors_pb2.Array(dtype="timestamp_",timestamp_=t_arr)
+    val1_arr=io_descriptors_pb2.NumpyNdarray(dtype="timestamp_",timestamp_=t_arr)
     val1=io_descriptors_pb2.Value(array_=val1_arr)
     val2=io_descriptors_pb2.Value(string_=i[0][1])
     tup_=io_descriptors_pb2.Tuple(value_=[val1,val2])
     item1=io_descriptors_pb2.Value(tuple_=tup_)
-    item2=io_descriptors_pb2.Value(f8=i[1])
+    item2=io_descriptors_pb2.Value(double_=i[1])
     proto_tuple=io_descriptors_pb2.Tuple(value_=[item1,item2])
     arr7_proto.append(proto_tuple)
-arr7_proto=io_descriptors_pb2.Array(dtype="tuple_",tuple_=arr7_proto)
+arr7_proto=io_descriptors_pb2.NumpyNdarray(dtype="tuple_",tuple_=arr7_proto)
 a7=[arr7,arr7_numpy,arr7_proto]
 
 arr8=[[[[datetime.datetime(2020, 5, 17),datetime.datetime(2020, 5, 18)],"A"],datetime.timedelta(days=3, minutes=10)],[[[datetime.datetime(2020, 5, 19),datetime.datetime(2020, 5, 20)],"B"],datetime.timedelta(days=4, minutes=30)]]
@@ -135,7 +134,7 @@ for i in arr8_numpy:
         t=Timestamp()
         t.FromDatetime(x)
         t_arr.append(t)
-    val1_arr=io_descriptors_pb2.Array(dtype="timestamp_",timestamp_=t_arr)
+    val1_arr=io_descriptors_pb2.NumpyNdarray(dtype="timestamp_",timestamp_=t_arr)
     val1=io_descriptors_pb2.Value(array_=val1_arr)
     val2=io_descriptors_pb2.Value(string_=i[0][1])
     tup_=io_descriptors_pb2.Tuple(value_=[val1,val2])
@@ -145,24 +144,17 @@ for i in arr8_numpy:
     item2=io_descriptors_pb2.Value(duration_=d)
     proto_tuple=io_descriptors_pb2.Tuple(value_=[item1,item2])
     arr8_proto.append(proto_tuple)
-arr8_proto=io_descriptors_pb2.Array(dtype="tuple_",tuple_=arr8_proto)
+arr8_proto=io_descriptors_pb2.NumpyNdarray(dtype="tuple_",tuple_=arr8_proto)
 a8=[arr8,arr8_numpy,arr8_proto]
 
-query_arr=a5
+query_arr=a1
 print("original array:",query_arr[0])
 # print("numpy format:",query_arr[1])
 # print("arr_to_proto output:",arr_to_proto(query_arr[0]))
 # print("protobuf format:", query_arr[2])
 print("proto_to_arr output:",proto_to_arr(arr_to_proto(query_arr[0])))
-# print("Original array is equal to generated array:", query_arr[0]==proto_to_arr(query_arr[2]))
+print("Original array is equal to generated array:", query_arr[0]==proto_to_arr(arr_to_proto(query_arr[0])))
 
 """
-Server:
-1. Check the input type
-2. Convert input from proto to the specified type
-3. Call api function on input
-4. Check output type
-5. Convert output to proto format
-6. Return output
+Todo: PR, Pandas
 """
-# Pandas
