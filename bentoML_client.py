@@ -27,6 +27,7 @@ def test_lda(query_description=query_description):
     query_description=bentoML_pb2.BentoServiceInput(input=bentoML_pb2.BentoServiceMessage(text=query_description))
     response=stub.predict(query_description)
     print(proto_to_arr(response.output.array))
+
 """
     Testing String
 """
@@ -147,7 +148,8 @@ for i in arr8_numpy:
 arr8_proto=io_descriptors_pb2.NumpyNdarray(dtype="tuple_",tuple_=arr8_proto)
 a8=[arr8,arr8_numpy,arr8_proto]
 
-query_arr=a1
+query_arr=a8
+# query_arr[0]=[datetime.timedelta(days=4, minutes=30),datetime.timedelta(days=6, minutes=30)]
 print("original array:",query_arr[0])
 # print("numpy format:",query_arr[1])
 # print("arr_to_proto output:",arr_to_proto(query_arr[0]))
@@ -156,5 +158,28 @@ print("proto_to_arr output:",proto_to_arr(arr_to_proto(query_arr[0])))
 print("Original array is equal to generated array:", query_arr[0]==proto_to_arr(arr_to_proto(query_arr[0])))
 
 """
-Todo: PR, Pandas
+Pandas
 """
+# import pandas as pd
+ 
+# data = [['tom', 10], ['nick', 15], ['juli', 14]]
+
+# df = pd.DataFrame(data, columns=["name","age"],index=["p1","p2","p3"])
+# data=df.to_numpy()
+
+# rows=[]
+# for row in df.index:
+#     rows.append(row)
+# print(rows)
+
+# cols=[]
+# for col in df.columns:
+#     cols.append(col)
+# print(cols)
+
+
+# import numpy as np
+# print(isinstance("Hello, World",np.str_))
+# print(isinstance(type("Hello, World"),np.str_))
+# print(np.dtype(type("Hello, World")) == np.str_)
+
