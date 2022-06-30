@@ -7,28 +7,25 @@ from google.protobuf.timestamp_pb2 import Timestamp
 
 import io_descriptors_pb2
 
-supported_datatypes = {
-    np.int32: "sint32_",
-    np.int64: "sint64_",
-    np.uint32: "uint32_",
-    np.uint64: "uint64_",
-    np.float32: "float_",
-    np.float64: "double_",
-    np.bool_: "bool_",
-    np.bytes_: "bytes_",
-    np.str_: "string_",
-    np.ndarray: "array_",
-    datetime.datetime: "timestamp_",
-    datetime.date: "timestamp_",
-    datetime.timedelta: "duration_",
-    # @TODO : complex types, bytestring, signed int, lower byte integers(8,16)
-}
-
 
 def is_supported(data):
     """
     Checks if the given type is within `supported_datatypes` dictionary
     """
+    supported_datatypes = {
+        np.int32: "sint32_",
+        np.int64: "sint64_",
+        np.uint32: "uint32_",
+        np.uint64: "uint64_",
+        np.float32: "float_",
+        np.float64: "double_",
+        np.bool_: "bool_",
+        np.bytes_: "bytes_",
+        np.str_: "string_",
+        np.ndarray: "array_",
+        # @TODO : complex types, bytestring, signed int, lower byte integers(8,16)
+    }
+
     found_dtype = ""
     for key in supported_datatypes:
         if np.dtype(type(data)) == key:

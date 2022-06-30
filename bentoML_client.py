@@ -186,8 +186,8 @@ def test_numpy(arr=query_arr[1]):
     return response.output.array
 
 
-# print(test_numpy())
-# print(proto_to_arr(test_numpy()))
+print(test_numpy())
+print(proto_to_arr(test_numpy()))
 """
 Pandas
 """

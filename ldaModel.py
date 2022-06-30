@@ -4,9 +4,11 @@
 """
 import numpy as np
 import pandas as pd
+
 # Imports to visualize the LDA model
 import pyLDAvis
 import pyLDAvis.sklearn
+
 # Import sklearn functions for LDA model
 from sklearn.decomposition import LatentDirichletAllocation
 from sklearn.feature_extraction.text import CountVectorizer
