@@ -2,18 +2,17 @@
     Author: Sadab Hafiz
     Description: This file contains functions to create,visualize and use an LDA model.
 """
-# Import functions for data reading and cleaning
-import dataPreprocess as dp
-
+import numpy as np
+import pandas as pd
+# Imports to visualize the LDA model
+import pyLDAvis
+import pyLDAvis.sklearn
 # Import sklearn functions for LDA model
 from sklearn.decomposition import LatentDirichletAllocation
 from sklearn.feature_extraction.text import CountVectorizer
 
-# Imports to visualize the LDA model
-import pyLDAvis
-import pyLDAvis.sklearn
-import numpy as np
-import pandas as pd
+# Import functions for data reading and cleaning
+import dataPreprocess as dp
 
 """
     Create doc-word matrix from given dataset using a CountVectorizer
@@ -25,22 +24,26 @@ import pandas as pd
         data_vectorized: doc-word matrix
         vectorizer: CountVectorizer class instance used to create doc-word matrix
 """
+
+
 def get_data_vectorized(dataset_csv, minimum_df, maximum_df):
-    #Initialize CountVectorizer with configurations to only consider words that occur atleast given minimum_df times
-    vectorizer = CountVectorizer(analyzer='word',
-                             min_df=minimum_df,
-                             max_df=maximum_df,                # Ignore words more than this frequency
-                             stop_words='english',             # remove stop words
-                             lowercase=True,                   # convert all words to lowercase
-                             token_pattern='[a-zA-Z]{3,}',     # words should be atleast 3 chars long
-                             )
-    #Read the provided dataset
-    descriptions_data=dp.read_data(dataset_csv)
-    #Tokenize, remove stopwords, case-fold, lemmatize the data
+    # Initialize CountVectorizer with configurations to only consider words that occur atleast given minimum_df times
+    vectorizer = CountVectorizer(
+        analyzer="word",
+        min_df=minimum_df,
+        max_df=maximum_df,  # Ignore words more than this frequency
+        stop_words="english",  # remove stop words
+        lowercase=True,  # convert all words to lowercase
+        token_pattern="[a-zA-Z]{3,}",  # words should be atleast 3 chars long
+    )
+    # Read the provided dataset
+    descriptions_data = dp.read_data(dataset_csv)
+    # Tokenize, remove stopwords, case-fold, lemmatize the data
     dp.preprocess(descriptions_data)
-    #Create doc-word matrix which is the input for the LDA model
-    data_vectorized=vectorizer.fit_transform(descriptions_data)
-    return data_vectorized,vectorizer
+    # Create doc-word matrix which is the input for the LDA model
+    data_vectorized = vectorizer.fit_transform(descriptions_data)
+    return data_vectorized, vectorizer
+
 
 """
     Creates lda_model with given number_of_topics and doc-word matrix from dataset
@@ -50,21 +53,25 @@ def get_data_vectorized(dataset_csv, minimum_df, maximum_df):
     @return:
         lda_model (LatentDirichletAllocation): lda model
 """
-def create_lda_model(data_vectorized,num_of_topics):
-    #Initialize an LDA model with configurations
-    lda_model = LatentDirichletAllocation(n_components=num_of_topics,         # Set number of topics to given number
-                                        max_iter=10,                          # Max learning iterations
-                                        learning_method='online',             # Online method is faster for large datasets
-                                        random_state=100,                     # Random state to reproduce same topics
-                                        batch_size=128,                       # Documents in each learning iteration
-                                        evaluate_every = -1,                  # compute perplexity every n iters, default: Don't
-                                        n_jobs = -1,                          # Use all available CPUs
-                                        learning_decay=0.6                    # Best learning decay based on log likelihood scored
-                                        )
-    #Create an LDA model with the given dataset
+
+
+def create_lda_model(data_vectorized, num_of_topics):
+    # Initialize an LDA model with configurations
+    lda_model = LatentDirichletAllocation(
+        n_components=num_of_topics,  # Set number of topics to given number
+        max_iter=10,  # Max learning iterations
+        learning_method="online",  # Online method is faster for large datasets
+        random_state=100,  # Random state to reproduce same topics
+        batch_size=128,  # Documents in each learning iteration
+        evaluate_every=-1,  # compute perplexity every n iters, default: Don't
+        n_jobs=-1,  # Use all available CPUs
+        learning_decay=0.6,  # Best learning decay based on log likelihood scored
+    )
+    # Create an LDA model with the given dataset
     lda_model.fit_transform(data_vectorized)
-    #Return the LDA model, vectorizer and the doc-word matrix
+    # Return the LDA model, vectorizer and the doc-word matrix
     return lda_model
+
 
 """
     Create "model.html" to show the topics created by the given LDA model
@@ -75,15 +82,20 @@ def create_lda_model(data_vectorized,num_of_topics):
     @output:
         model.html (file): model visualization
 """
-def visualize_lda_model(lda_model,data_vectorized,vectorizer):
-    #Prepare the visualization
-    visualization = pyLDAvis.sklearn.prepare(lda_model, data_vectorized, vectorizer, mds='tsne')
-    #Save the visualization as 'model.html'
+
+
+def visualize_lda_model(lda_model, data_vectorized, vectorizer):
+    # Prepare the visualization
+    visualization = pyLDAvis.sklearn.prepare(
+        lda_model, data_vectorized, vectorizer, mds="tsne"
+    )
+    # Save the visualization as 'model.html'
     try:
-        pyLDAvis.save_html(visualization,'model.html')
-    #Log error in visualization creation
+        pyLDAvis.save_html(visualization, "model.html")
+    # Log error in visualization creation
     except:
         print("Failed to create visualization")
+
 
 """
     Returns the perplexity score of the provided LDA model
@@ -93,8 +105,11 @@ def visualize_lda_model(lda_model,data_vectorized,vectorizer):
     @returns:
         perplexity(float): the perplexity of the provided lda model on provided dataset
 """
-def get_perplexity(lda_model,data_vectorized):
+
+
+def get_perplexity(lda_model, data_vectorized):
     lda_model.perplexity(data_vectorized)
+
 
 """
     Returns and saves a dataframe with top specified number words for each topic in the given LDA model and vectorizer
@@ -105,6 +120,8 @@ def get_perplexity(lda_model,data_vectorized):
     @return:
         topic_keywords(pandas dataframe): dataframe is also saved as 'topic_words.csv' 
 """
+
+
 def show_topics(vectorizer, lda_model, num):
     #  Np array of the feature names in passed vectorizer
     keywords = np.array(vectorizer.get_feature_names_out())
@@ -118,12 +135,17 @@ def show_topics(vectorizer, lda_model, num):
     # Save the topic distribution as a pandas csv
     df_topic_keywords = pd.DataFrame(topic_keywords)
     # Word number
-    df_topic_keywords.columns = ['Word '+str(i) for i in range(df_topic_keywords.shape[1])]
+    df_topic_keywords.columns = [
+        "Word " + str(i) for i in range(df_topic_keywords.shape[1])
+    ]
     # Topic number
-    df_topic_keywords.index = ['Topic '+str(i) for i in range(df_topic_keywords.shape[0])]
+    df_topic_keywords.index = [
+        "Topic " + str(i) for i in range(df_topic_keywords.shape[0])
+    ]
     # Save the dataframe
-    df_topic_keywords.to_csv("topic_words.csv",index=True)
+    df_topic_keywords.to_csv("topic_words.csv", index=True)
     return df_topic_keywords
+
 
 """
     Predits the topic for the given string using the passed lda_model and returns topic keywords and topic probabilities for each topic
@@ -135,27 +157,27 @@ def show_topics(vectorizer, lda_model, num):
     @return:
         topic_distribution (2d list[list of strings, float]): Contains keywords for each topic and the frequency of the topic in query description
 """
-def predict(query_description, vectorizer,lda_model,df_topic_keywords):
+
+
+def predict(query_description, vectorizer, lda_model, df_topic_keywords):
     # Return empty lists if the input is invalid
     if not query_description:
         print("invalid input")
-        return [],[]
+        return [], []
     # Clean the query_description and prepare it for CountVectorizer
     dp.preprocess_single(query_description)
-    query_description=[query_description]
+    query_description = [query_description]
     # Vectorize the query_description to prepare it for LDA model
-    query_description= vectorizer.transform(query_description)
+    query_description = vectorizer.transform(query_description)
 
     # Check the topic of the query_description using the passed LDA model
     topic_probability_scores = lda_model.transform(query_description)
     # Get the top words for the each topics
-    topics_list=df_topic_keywords.values.tolist()
-    # Append the topic keywords and probability of all topics into an array 
-    topic_distribution=[]
+    topics_list = df_topic_keywords.values.tolist()
+    # Append the topic keywords and probability of all topics into an array
+    topic_distribution = []
     for i in range(len(topics_list)):
-        topic_distribution.append([topics_list[i],topic_probability_scores[0][i]])
+        topic_distribution.append([topics_list[i], topic_probability_scores[0][i]])
     # Sort the topics based on the frequency
-    #topic_distribution.sort(key=lambda row:(row[1]), reverse=True)
+    # topic_distribution.sort(key=lambda row:(row[1]), reverse=True)
     return topic_distribution
-
-

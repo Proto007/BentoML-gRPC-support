@@ -1,31 +1,33 @@
-import bentoml
 import os
 import sys
+
+import bentoml
 
 """
     Load the service
     Verify user entered correct number of cli arguments and valid service name
 """
-if(len(sys.argv)!=2):
+if len(sys.argv) != 2:
     print("Invalid number of arguments. Please provide a Service.")
     quit()
 try:
-    svc=bentoml.load(sys.argv[1])
+    svc = bentoml.load(sys.argv[1])
 except:
     raise ValueError("Service is invalid. Try again with a valid Service.")
 
-for _,api in svc.apis.items():
-    api_func=api.func
+for _, api in svc.apis.items():
+    api_func = api.func
+
 
 def create_service_proto():
     """
     Generate service proto file with the name of the api function
     """
-   
-    #Create the protobuf file
-    with open('./protos/bentoML.proto','w') as f:
+
+    # Create the protobuf file
+    with open("./protos/bentoML.proto", "w") as f:
         f.write(
-f"""
+            f"""
 syntax = "proto3";
 
 import "io_descriptors.proto";
@@ -55,21 +57,23 @@ service BentoML{{
         )
     return api_func
 
-def create_server(server_name:str):
+
+def create_server(server_name: str):
     """
     Write grpc server code in a new python file with the specified server_name
     """
-    if server_name[-3:]!=".py":
+    if server_name[-3:] != ".py":
         raise ValueError("File must be a .py file.")
-    with open(server_name,"w") as f:
+    with open(server_name, "w") as f:
         f.write(
-f"""# Code to create a server using grpc
+            f"""# Code to create a server using grpc
 import grpc
 import bentoML_pb2
 import bentoML_pb2_grpc
 import bentoml
 from concurrent import futures
 from bentoml.io import NumpyNdarray,Text
+import numpy as np
 
 from grpc_service_util import arr_to_proto,proto_to_arr
 
@@ -99,7 +103,7 @@ class BentoMLServicer(bentoML_pb2_grpc.BentoMLServicer):
             input=input.text
         elif(io_type=="array"):
             input=input.array
-            input=proto_to_arr(input)
+            input=np.array(proto_to_arr(input))
         else:
             raise ValueError("Invalid input type.")
 
@@ -124,8 +128,14 @@ print("Listening on port 8000...")
 server.wait_for_termination()
 """
         )
+
+
 create_service_proto()
-os.system("python -m grpc_tools.protoc -I./protos --python_out=. protos/io_descriptors.proto")
-os.system("python -m grpc_tools.protoc -I./protos --python_out=. --grpc_python_out=. protos/bentoML.proto")
+os.system(
+    "python -m grpc_tools.protoc -I./protos --python_out=. protos/io_descriptors.proto"
+)
+os.system(
+    "python -m grpc_tools.protoc -I./protos --python_out=. --grpc_python_out=. protos/bentoML.proto"
+)
 create_server("server.py")
 os.system("python server.py")
