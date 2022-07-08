@@ -4,21 +4,22 @@
 """
 # Import necessary modules
 import bentoml
+
 import ldaModel as lda
 
 """
     Creating an LDA model
 """
-data_vectorized,vectorizer=lda.get_data_vectorized('books.csv',10,0.8)
-lda_model=lda.create_lda_model(data_vectorized,15)
-lda.visualize_lda_model(lda_model,data_vectorized,vectorizer)
-df_topic_keywords = lda.show_topics(vectorizer, lda_model,15)
+data_vectorized, vectorizer = lda.get_data_vectorized("books.csv", 10, 0.8)
+lda_model = lda.create_lda_model(data_vectorized, 15)
+lda.visualize_lda_model(lda_model, data_vectorized, vectorizer)
+df_topic_keywords = lda.show_topics(vectorizer, lda_model, 15)
 
 """
     Saving the data_vectorized, vectorizer and lda_model in disk for faster lodaing
 """
-bentoml.sklearn.save_model("data_vectorized",data_vectorized)
-bentoml.sklearn.save_model("vectorizer",vectorizer)
+bentoml.sklearn.save_model("data_vectorized", data_vectorized)
+bentoml.sklearn.save_model("vectorizer", vectorizer)
 bentoml.sklearn.save_model("ldamodel", lda_model)
 """
     Example code showing how to predict the probability of given text using the LDA model
