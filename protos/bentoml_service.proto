@@ -1,0 +1,25 @@
+
+syntax = "proto3";
+
+import "io_descriptors.proto";
+
+message BentoServiceMessage {
+	oneof io_descriptor{
+		string text=1;
+        NumpyNdarray array=2;
+	}
+}
+
+message BentoServiceInput {
+	BentoServiceMessage input = 1;
+	//TODO string api_name=2;
+}
+
+message BentoServiceOutput {
+	BentoServiceMessage output= 1;
+	//TODO status, error
+}
+
+service BentoML{
+	rpc predict(BentoServiceInput) returns (BentoServiceOutput);
+}

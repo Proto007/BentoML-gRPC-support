@@ -50,3 +50,9 @@ message NumpyNdarray {
 	repeated NumpyNdarray array_=13;
 	repeated Tuple tuple_=14;
 }
+
+message PandasDataframe{
+	NumpyNdarray index=1;
+	NumpyNdarray columns=2;
+	NumpyNdarray data=3;
+}

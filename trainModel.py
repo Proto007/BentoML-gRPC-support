@@ -15,12 +15,26 @@ lda_model = lda.create_lda_model(data_vectorized, 15)
 lda.visualize_lda_model(lda_model, data_vectorized, vectorizer)
 df_topic_keywords = lda.show_topics(vectorizer, lda_model, 15)
 
+# Create a class that can be used for runner
+class LdaModelClass:
+    def predict(self, query_description: str):
+        return lda.predict(
+            str(query_description), vectorizer, lda_model, df_topic_keywords
+        )
+
+# Create an instance of LdaModelClass
+runner_model = LdaModelClass()
+
+# Save the model as 'runnermodel'
+model = bentoml.picklable_model.save_model(
+    "runnermodel", runner_model, signatures={"predict": {"batchable": False}}
+)
+
 """
     Saving the data_vectorized, vectorizer and lda_model in disk for faster lodaing
 """
-bentoml.sklearn.save_model("data_vectorized", data_vectorized)
-bentoml.sklearn.save_model("vectorizer", vectorizer)
-bentoml.sklearn.save_model("ldamodel", lda_model)
+bentoml.sklearn.save_model("ldamodel", lda_model, custom_objects={"data_vectorized":data_vectorized, "vectorizer": vectorizer})
+
 """
     Example code showing how to predict the probability of given text using the LDA model
 """
