@@ -1,17 +1,11 @@
-import datetime
-from io import BytesIO
-
-import numpy as np
-from google.protobuf.duration_pb2 import Duration
-from google.protobuf.timestamp_pb2 import Timestamp
-
-import io_descriptors_pb2
-
-
 def is_supported(data):
     """
     Checks if the given type is within `supported_datatypes` dictionary
     """
+    import datetime
+
+    import numpy as np
+
     supported_datatypes = {
         np.int32: "sint32_",
         np.int64: "sint64_",
@@ -23,8 +17,11 @@ def is_supported(data):
         np.bytes_: "bytes_",
         np.str_: "string_",
         np.ndarray: "array_",
-        # @TODO : complex types, bytestring, signed int, lower byte integers(8,16)
+        np.datetime64: "timestamp_",
+        np.timedelta64: "duration_"
+        # TODO : complex types, lower byte integers(8,16)
     }
+
 
     found_dtype = ""
     for key in supported_datatypes:
@@ -41,26 +38,39 @@ def is_supported(data):
 
     return found_dtype
 
-
-def create_tuple_proto(tuple) -> io_descriptors_pb2.Tuple:
+def create_tuple_proto(tuple):
     """
     Convert given tuple list or tuple array to protobuf
     """
+    import datetime
+
+    import numpy as np
+    import io_descriptors_pb2
+    from google.protobuf.duration_pb2 import Duration
+    from google.protobuf.timestamp_pb2 import Timestamp
+
     if len(tuple) == 0:
         raise ValueError("Provided tuple is either empty or invalid.")
+
     tuple_arr = []
     for item in tuple:
         dtype = is_supported(item)
 
         if not dtype:
-            raise ValueError(f'Invalid datatype "{type(item).__name__}" within tuple.')
+            raise ValueError(
+                f'Invalid datatype "{type(item).__name__}" within tuple.'
+            )
         elif dtype == "timestamp_":
+            if isinstance(item, np.datetime64):
+                item = item.astype(datetime.datetime)
             if isinstance(item, datetime.date):
                 item = datetime.datetime(item.year, item.month, item.day)
             t = Timestamp()
             t.FromDatetime(item)
             tuple_arr.append(io_descriptors_pb2.Value(**{"timestamp_": t}))
         elif dtype == "duration_":
+            if isinstance(item, np.timedelta64):
+                item = item.astype(datetime.timedelta)
             d = Duration()
             d.FromTimedelta(item)
             tuple_arr.append(io_descriptors_pb2.Value(**{"duration_": d}))
@@ -76,11 +86,17 @@ def create_tuple_proto(tuple) -> io_descriptors_pb2.Tuple:
 
     return io_descriptors_pb2.Tuple(value_=tuple_arr)
 
+def arr_to_proto(arr):
+    """
+    Convert given list or array to protobuf
+    """
+    import datetime
 
-def arr_to_proto(arr) -> io_descriptors_pb2.NumpyNdarray:
-    """
-    Convert given array or list to protobuf
-    """
+    import numpy as np
+    import io_descriptors_pb2
+    from google.protobuf.duration_pb2 import Duration
+    from google.protobuf.timestamp_pb2 import Timestamp
+
     if len(arr) == 0:
         raise ValueError("Provided array is either empty or invalid.")
     if not all(isinstance(x, type(arr[0])) for x in arr):
@@ -93,7 +109,9 @@ def arr_to_proto(arr) -> io_descriptors_pb2.NumpyNdarray:
     if dtype == "timestamp_":
         timestamp_arr = []
         for dt in arr:
-            if type(dt) == datetime.date:
+            if isinstance(dt, np.datetime64):
+                dt = dt.astype(datetime.datetime)
+            if isinstance(dt, datetime.date):
                 dt = datetime.datetime(dt.year, dt.month, dt.day)
             t = Timestamp()
             t.FromDatetime(dt)
@@ -104,6 +122,8 @@ def arr_to_proto(arr) -> io_descriptors_pb2.NumpyNdarray:
     elif dtype == "duration_":
         duration_arr = []
         for td in arr:
+            if isinstance(td, np.timedelta64):
+                td = td.astype(datetime.timedelta)
             d = Duration()
             d.FromTimedelta(td)
             duration_arr.append(d)
@@ -116,24 +136,21 @@ def arr_to_proto(arr) -> io_descriptors_pb2.NumpyNdarray:
     return_arr = []
     is_tuple = False
     for i in range(len(arr)):
-        print(arr[i])
         if not all(isinstance(x, type(arr[i][0])) for x in arr[i]):
             is_tuple = True
             val = create_tuple_proto(arr[i])
         else:
             val = arr_to_proto(arr[i])
         return_arr.append(val)
-    try:
-        if is_tuple:
-            return_arr = io_descriptors_pb2.NumpyNdarray(
-                dtype="tuple_", tuple_=return_arr
-            )
-        else:
-            return_arr = io_descriptors_pb2.NumpyNdarray(
-                dtype="array_", array_=return_arr
-            )
-    except:
-        raise ValueError("Entered invalid array of inconsistent shape.")
+
+    if is_tuple:
+        return_arr = io_descriptors_pb2.NumpyNdarray(
+            dtype="tuple_", tuple_=return_arr
+        )
+    else:
+        return_arr = io_descriptors_pb2.NumpyNdarray(
+            dtype="array_", array_=return_arr
+        )
 
     return return_arr
 
