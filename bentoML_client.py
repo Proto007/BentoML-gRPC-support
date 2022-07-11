@@ -10,14 +10,14 @@ from google.protobuf.timestamp_pb2 import Timestamp
 from requests import request
 
 # Import generated files
-import bentoML_pb2
-import bentoML_pb2_grpc
+import bentoml_service_pb2
+import bentoml_service_pb2_grpc
 import io_descriptors_pb2
 from grpc_service_util import arr_to_proto, proto_to_arr
 
 # # Define a channel with the backend server address
-channel = grpc.insecure_channel("localhost:8000")
-stub = bentoML_pb2_grpc.BentoMLStub(channel)
+channel = grpc.insecure_channel("localhost:50051")
+stub = bentoml_service_pb2_grpc.BentoMLStub(channel)
 
 """
     Testing LDA Model
@@ -26,21 +26,21 @@ query_description = "If happy ever after did exist, I was to be holding you like
 
 
 def test_lda(query_description=query_description):
-    query_description = bentoML_pb2.BentoServiceInput(
-        input=bentoML_pb2.BentoServiceMessage(text=query_description)
+    query_description = bentoml_service_pb2.BentoServiceInput(
+        input=bentoml_service_pb2.BentoServiceMessage(text=query_description)
     )
     response = stub.predict(query_description)
     return response.output.array
 
 
-# print(test_lda())
-# print(proto_to_arr(test_lda()))
+print(test_lda())
+print(proto_to_arr(test_lda()))
 """
     Testing String
 """
 # string_data="badaS ma I ,iH"
 
-# data=input_data=bentoML_pb2.BentoServiceInput(input=bentoML_pb2.BentoServiceMessage(text=string_data))
+# data=input_data=bentoml_service_pb2.BentoServiceInput(input=bentoml_service_pb2.BentoServiceMessage(text=string_data))
 
 # response=stub.predict(data)
 
@@ -170,49 +170,51 @@ arr8_proto = io_descriptors_pb2.NumpyNdarray(dtype="tuple_", tuple_=arr8_proto)
 a8 = [arr8, arr8_numpy, arr8_proto]
 
 query_arr = a8
-# query_arr[0]=[datetime.timedelta(days=4, minutes=30),datetime.timedelta(days=6, minutes=30)]
-# print("original array:",query_arr[0])
-# print("numpy format:",query_arr[1])
-# print("arr_to_proto output:",arr_to_proto(query_arr[0]))
-# print("protobuf format:", query_arr[2])
-# print("proto_to_arr output:",proto_to_arr(arr_to_proto(query_arr[0])))
-# print("Original array is equal to generated array:", query_arr[0]==proto_to_arr(arr_to_proto(query_arr[0])))
-# test_lda()
+
 def test_numpy(arr=query_arr[1]):
-    data = bentoML_pb2.BentoServiceInput(
-        input=bentoML_pb2.BentoServiceMessage(array=arr_to_proto(arr))
+    data = bentoml_service_pb2.BentoServiceInput(
+        input=bentoml_service_pb2.BentoServiceMessage(array=arr_to_proto(arr))
     )
     response = stub.predict(data)
     return response.output.array
 
-
-print(test_numpy())
-print(proto_to_arr(test_numpy()))
+# print(test_numpy())
+# print(proto_to_arr(test_numpy()))
 """
 Pandas
 """
 # import pandas as pd
 
+# def df_to_proto(df):
+#     index = arr_to_proto([row for row in df.index])
+#     columns = arr_to_proto([col for col in df.columns])
+#     data = arr_to_proto(df.to_numpy(dtype=df.dtypes)) 
+#     return io_descriptors_pb2.PandasDataframe(index=index,columns=columns,data=data)
+
+# def proto_to_df(proto_df):
+#     index = proto_to_arr(proto_df.index)
+#     columns = proto_to_arr(proto_df.columns)
+#     data = proto_to_arr(proto_df.data)
+#     return pd.DataFrame(data, index=index, columns=columns)
+
+# # Test dataframes
 # data = [['tom', 10], ['nick', 15], ['juli', 14]]
+# df1 = pd.DataFrame(data, columns=[1.3,1.4],index=[1.2,1.3,1.4])
 
-# df = pd.DataFrame(data, columns=["name","age"],index=["p1","p2","p3"])
-# data=df.to_numpy()
+# data = [['tom', 10, 1.1], ['nick', 15, 1.1], ['juli', 14, 1.1]]
+# df2 = pd.DataFrame(data, columns=["a", "b", "c"])
 
-# rows=[]
-# for row in df.index:
-#     rows.append(row)
-# print(rows)
+# data = [['tom', 10, 1.1], ['nick', 15, 1.1], ['juli', 14, 1.1]]
+# df3 = pd.DataFrame(data)
 
-# cols=[]
-# for col in df.columns:
-#     cols.append(col)
-# print(cols)
+# data = ['tom', 10, 1.1]
+# df4 = pd.DataFrame(data)
 
+# query_df = df2
+# proto_df = df_to_proto(query_df)
+# new_df = proto_to_df(proto_df)
+# print(proto_df)
+# print(query_df)
+# print(new_df)
 
-# import numpy as np
-# print(isinstance("Hello, World",str))
-# print(np.str_ is str)
-# print(isinstance(type("Hello, World"),np.str_))
-# print(np.dtype(type("Hello, World")),np.str_)
-
-# print(np.dtype(type("hello")))
+# print(df2.to_dict())
