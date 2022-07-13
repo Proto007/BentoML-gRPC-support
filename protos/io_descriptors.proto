@@ -18,7 +18,6 @@ message Value{
 		bool bool_=9;
 		string string_=10;
 		bytes bytes_=11;
-		Value value_=12;
 		NumpyNdarray array_=13;
 		Tuple tuple_=14;
 	}
@@ -51,8 +50,32 @@ message NumpyNdarray {
 	repeated Tuple tuple_=14;
 }
 
-message PandasDataframe{
-	NumpyNdarray index=1;
-	NumpyNdarray columns=2;
-	NumpyNdarray data=3;
+// message PandasDataframe{
+// 	optional NumpyNdarray index=1;
+// 	optional NumpyNdarray columns=2;
+// 	NumpyNdarray data=3;
+// }
+
+message Series{
+	string keytype=1;
+	map<uint32, Value> uint32_=2;
+	map<uint64, Value> uint64_=4;
+	map<sint32, Value> sint32_=5;
+	map<sint64, Value> sint64_=6;
+	map<bool, Value> bool_=9;
+	map<string, Value> string_=10;
+}
+
+// message Map{
+// 	map<string, Value> string_=1;
+// }
+
+message Dataframe{
+	string keytype=1;
+	map<uint32, Series> uint32_=2;
+	map<uint64, Series> uint64_=4;
+	map<sint32, Series> sint32_=5;
+	map<sint64, Series> sint64_=6;
+	map<bool, Series> bool_=9;
+	map<string, Series> string_=10;
 }
