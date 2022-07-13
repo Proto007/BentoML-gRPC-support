@@ -1,6 +1,7 @@
 import bentoml
 import numpy as np
 from bentoml.io import NumpyNdarray, Text
+
 try:
     lda_model=bentoml.models.get("runnermodel:latest")
 except:
@@ -15,3 +16,8 @@ svc = bentoml.Service("lda_model_classifier", runners=[lda_model_runner])
 def predict(input_series) -> np.ndarray:
     topicsArr = lda_model_runner.predict.run(str(input_series))
     return np.array(topicsArr, dtype=object)
+
+# Specify api input as Numpy Array and output as Numpy Array
+@svc.api(input=NumpyNdarray(), output=NumpyNdarray())
+def numpy_test(input_series) -> np.ndarray:
+    return np.array(input_series,dtype=object)
