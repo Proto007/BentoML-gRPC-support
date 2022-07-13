@@ -5,9 +5,7 @@ from turtle import numinput
 import grpc
 import numpy as np
 from google.protobuf.duration_pb2 import Duration
-from google.protobuf.json_format import MessageToDict
 from google.protobuf.timestamp_pb2 import Timestamp
-from requests import request
 
 # Import generated files
 import bentoml_service_pb2
@@ -27,9 +25,10 @@ query_description = "If happy ever after did exist, I was to be holding you like
 
 def test_lda(query_description=query_description):
     query_description = bentoml_service_pb2.BentoServiceInput(
+        api_name="predict",
         input=bentoml_service_pb2.BentoServiceMessage(text=query_description)
     )
-    response = stub.predict(query_description)
+    response = stub.call(query_description)
     return response.output.array
 
 
@@ -173,18 +172,19 @@ query_arr = a8
 
 def test_numpy(arr=query_arr[1]):
     data = bentoml_service_pb2.BentoServiceInput(
+        api_name="numpy_test",
         input=bentoml_service_pb2.BentoServiceMessage(array=arr_to_proto(arr))
     )
-    response = stub.predict(data)
+    response = stub.call(data)
     return response.output.array
 
-# print(test_numpy())
-# print(proto_to_arr(test_numpy()))
+print(test_numpy())
+print(proto_to_arr(test_numpy()))
 """
 Pandas
 """
-# import pandas as pd
-
+import pandas as pd
+from grpc_service_util import df_to_proto, proto_to_df
 # def df_to_proto(df):
 #     index = arr_to_proto([row for row in df.index])
 #     columns = arr_to_proto([col for col in df.columns])
@@ -197,24 +197,27 @@ Pandas
 #     data = proto_to_arr(proto_df.data)
 #     return pd.DataFrame(data, index=index, columns=columns)
 
-# # Test dataframes
-# data = [['tom', 10], ['nick', 15], ['juli', 14]]
-# df1 = pd.DataFrame(data, columns=[1.3,1.4],index=[1.2,1.3,1.4])
 
-# data = [['tom', 10, 1.1], ['nick', 15, 1.1], ['juli', 14, 1.1]]
-# df2 = pd.DataFrame(data, columns=["a", "b", "c"])
 
-# data = [['tom', 10, 1.1], ['nick', 15, 1.1], ['juli', 14, 1.1]]
-# df3 = pd.DataFrame(data)
+# Test dataframes
+data = [['tom', 10], ['nick', 15], ['juli', 14]]
+df1 = pd.DataFrame(data, columns=[1.3,1.4],index=[1.2,1.3,1.4])
 
-# data = ['tom', 10, 1.1]
-# df4 = pd.DataFrame(data)
+data = [['tom', 10, 1.1], ['nick', 15, 1.1], ['juli', 14, 1.1]]
+df2 = pd.DataFrame(data, columns=["a", "b", "c"])
 
-# query_df = df2
-# proto_df = df_to_proto(query_df)
-# new_df = proto_to_df(proto_df)
+data = [['tom', 10, 1.1], ['nick', 15, 1.1], ['juli', 14, 1.1]]
+df3 = pd.DataFrame(data)
+
+data = ['tom', 10, 1.1]
+df4 = pd.DataFrame(data)
+
+query_df = df3
+proto_df = df_to_proto(query_df)
+new_df = proto_to_df(proto_df)
 # print(proto_df)
-# print(query_df)
+# print(query_df) 
 # print(new_df)
-
+# print(query_df.to_dict()==new_df.to_dict())
+df5 = {'a': {0: 'tom', 1: 'nick', 2: 'juli'}, 'b': {0: 10, 4: 15, 5: 14}, 'c': {6: 1.1, 7: 1.1, 8: 1.1}}
 # print(df2.to_dict())

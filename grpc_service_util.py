@@ -217,3 +217,127 @@ def proto_to_arr(proto_arr):
             return_arr[i] = handle_tuple(return_arr[i])
 
     return return_arr
+
+def is_key_supported(data):
+    import numpy as np
+
+    supported_keytypes={
+        np.int32: "sint32_",
+        np.int64: "sint64_",
+        np.uint32: "uint32_",
+        np.uint64: "uint64_",
+        np.bool_: "bool_",
+        np.str_: "string_",
+    }
+
+    found_keytype = ""
+    for key in supported_keytypes:
+        if np.dtype(type(data)) == key:
+            found_keytype = supported_keytypes[key]
+            break
+
+    return found_keytype
+
+def create_series_proto(pd_series):
+    """{0: 'tom', 1: 'nick', 2: 'juli'}"""
+    import datetime
+    import numpy as np
+    from google.protobuf.duration_pb2 import Duration
+    from google.protobuf.timestamp_pb2 import Timestamp
+
+    import io_descriptors_pb2
+
+    index_type=""
+    return_dict={}
+    for index in pd_series:
+        if not is_key_supported(index):
+            raise ValueError("Invalid datatype for index.")
+        if not index_type:
+            index_type = is_key_supported(index)
+        elif is_key_supported(index) != index_type:
+            raise ValueError("Mixed datatype indexes are not supported.")
+        value_type = is_supported(pd_series[index])
+        if not value_type:
+            raise ValueError(
+                f'Invalid datatype "{type(pd_series[index]).__name__}" within series.'
+            )
+        elif value_type == "timestamp_":
+            if isinstance(item, np.datetime64):
+                item = item.astype(datetime.datetime)
+            if isinstance(item, datetime.date):
+                item = datetime.datetime(item.year, item.month, item.day)
+            t = Timestamp()
+            t.FromDatetime(item)
+            return_dict[index] = io_descriptors_pb2.Value(**{"timestamp_": t})
+        elif value_type == "duration_":
+            if isinstance(item, np.timedelta64):
+                item = item.astype(datetime.timedelta)
+            d = Duration()
+            d.FromTimedelta(item)
+            return_dict[index] = io_descriptors_pb2.Value(**{"duration_": d})
+        elif value_type == "array_":
+            if not all(isinstance(x, type(item[0])) for x in item):
+                val = create_tuple_proto(item)
+                return_dict[index] = io_descriptors_pb2.Value(tuple_=val)
+            else:
+                val = arr_to_proto(item)
+                return_dict[index] = io_descriptors_pb2.Value(array_=val)
+        else:
+            return_dict[index] = io_descriptors_pb2.Value(**{f"{value_type}": pd_series[index]})
+
+    return io_descriptors_pb2.Series(**{"keytype":index_type,f"{index_type}":return_dict})
+    ...
+def df_to_proto(df):
+    import io_descriptors_pb2
+
+    """{'a': {0: 'tom', 1: 'nick', 2: 'juli'}, 'b': {0: 10, 1: 15, 2: 14}, 'c': {0: 1.1, 1: 1.1, 2: 1.1}}"""
+    dict_df = df.to_dict()
+    return_dict = {}
+    column_type = ""
+    for key in dict_df:
+        if not is_key_supported(key):
+            raise ValueError("Invalid datatype for column.")
+        if not column_type:
+            column_type = is_key_supported(key)
+        elif is_key_supported(key) != column_type:
+            raise ValueError("Mixed datatype columns are not supported.")
+        series_proto = create_series_proto(dict_df[key])
+        return_dict[key]=series_proto
+
+    return io_descriptors_pb2.Dataframe(**{"keytype":column_type, f"{column_type}":return_dict})
+
+def handle_series(proto_series):
+    from google.protobuf.duration_pb2 import Duration
+    from google.protobuf.timestamp_pb2 import Timestamp
+    import io_descriptors_pb2
+    series_data = getattr(proto_series, f"{proto_series.keytype}")
+    series_dict = {}
+
+    for index in series_data:
+        val = getattr(series_data[index], series_data[index].WhichOneof("dtype"))
+
+        if not val:
+            raise ValueError("Provided protobuf tuple doesn't have a value.")
+
+        if series_data[index].WhichOneof("dtype") == "timestamp_":
+            val = Timestamp.ToDatetime(val)
+        elif series_data[index].WhichOneof("dtype") == "duration_":
+            val = Duration.ToTimedelta(val)
+
+        if isinstance(val, io_descriptors_pb2.NumpyNdarray):
+            val = proto_to_arr(val)
+        elif isinstance(val, io_descriptors_pb2.Tuple):
+            val = handle_tuple(val)
+        series_dict[index] = val
+
+    return series_dict
+
+def proto_to_df(proto_df):
+    import pandas as pd
+    proto_df = getattr(proto_df,f"{proto_df.keytype}")
+    df_dict={}
+    for key in proto_df:
+        series_dict=handle_series(proto_df[key])
+        df_dict[key] = series_dict
+    return pd.DataFrame(df_dict)
+    

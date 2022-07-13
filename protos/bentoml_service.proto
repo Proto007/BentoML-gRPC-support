@@ -11,15 +11,14 @@ message BentoServiceMessage {
 }
 
 message BentoServiceInput {
-	BentoServiceMessage input = 1;
-	//TODO string api_name=2;
+	string api_name=1;
+	BentoServiceMessage input = 2;
 }
 
 message BentoServiceOutput {
 	BentoServiceMessage output= 1;
 	//TODO status, error
 }
-
 service BentoML{
-	rpc predict(BentoServiceInput) returns (BentoServiceOutput);
+	rpc call(BentoServiceInput) returns (BentoServiceOutput);
 }
