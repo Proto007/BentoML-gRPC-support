@@ -22,6 +22,7 @@ class LdaModelClass:
             str(query_description), vectorizer, lda_model, df_topic_keywords
         )
 
+
 # Create an instance of LdaModelClass
 runner_model = LdaModelClass()
 
@@ -33,7 +34,11 @@ model = bentoml.picklable_model.save_model(
 """
     Saving the data_vectorized, vectorizer and lda_model in disk for faster lodaing
 """
-bentoml.sklearn.save_model("ldamodel", lda_model, custom_objects={"data_vectorized":data_vectorized, "vectorizer": vectorizer})
+bentoml.sklearn.save_model(
+    "ldamodel",
+    lda_model,
+    custom_objects={"data_vectorized": data_vectorized, "vectorizer": vectorizer},
+)
 
 """
     Example code showing how to predict the probability of given text using the LDA model
