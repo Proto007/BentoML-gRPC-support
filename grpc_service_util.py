@@ -1,53 +1,53 @@
+import datetime
+
+
 def is_supported(data):
     """
     Checks if the given type is within `supported_datatypes` dictionary
     """
-    import datetime
-
     import numpy as np
 
     supported_datatypes = {
-        np.int32: "sint32_",
-        np.int64: "sint64_",
-        np.uint32: "uint32_",
-        np.uint64: "uint64_",
-        np.float32: "float_",
-        np.float64: "double_",
-        np.bool_: "bool_",
-        np.bytes_: "bytes_",
-        np.str_: "string_",
-        np.ndarray: "array_",
-        np.datetime64: "timestamp_",
-        np.timedelta64: "duration_"
+        np.float32: "float_value",
+        np.float64: "double_value",
+        np.bytes_: "bytes_value",
+        np.bool_: "bool_value",
+        np.str_: "string_value",
+        np.uint32: "uint32_value",
+        np.int32: "sint32_value",
+        np.datetime64: "timestamp_value",
+        np.timedelta64: "duration_value",
+        np.ndarray: "array_value",
+        np.uint64: "uint64_value",
+        np.int64: "sint64_value"
         # TODO : complex types, lower byte integers(8,16)
     }
-
 
     found_dtype = ""
     for key in supported_datatypes:
         if np.dtype(type(data)) == key:
             found_dtype = supported_datatypes[key]
-            if found_dtype == "array_":
+            if found_dtype == "array_value":
                 if isinstance(data, datetime.datetime) or isinstance(
                     data, datetime.date
                 ):
-                    found_dtype = "timestamp_"
+                    found_dtype = "timestamp_value"
                 elif isinstance(data, datetime.timedelta):
-                    found_dtype = "duration_"
+                    found_dtype = "duration_value"
             break
 
     return found_dtype
+
 
 def create_tuple_proto(tuple):
     """
     Convert given tuple list or tuple array to protobuf
     """
-    import datetime
-
     import numpy as np
-    import io_descriptors_pb2
     from google.protobuf.duration_pb2 import Duration
     from google.protobuf.timestamp_pb2 import Timestamp
+
+    import payload_pb2
 
     if len(tuple) == 0:
         raise ValueError("Provided tuple is either empty or invalid.")
@@ -57,45 +57,43 @@ def create_tuple_proto(tuple):
         dtype = is_supported(item)
 
         if not dtype:
-            raise ValueError(
-                f'Invalid datatype "{type(item).__name__}" within tuple.'
-            )
-        elif dtype == "timestamp_":
+            raise ValueError(f'Invalid datatype "{type(item).__name__}" within tuple.')
+        elif dtype == "timestamp_value":
             if isinstance(item, np.datetime64):
                 item = item.astype(datetime.datetime)
             if isinstance(item, datetime.date):
                 item = datetime.datetime(item.year, item.month, item.day)
             t = Timestamp()
             t.FromDatetime(item)
-            tuple_arr.append(io_descriptors_pb2.Value(**{"timestamp_": t}))
-        elif dtype == "duration_":
+            tuple_arr.append(payload_pb2.Value(**{"timestamp_value": t}))
+        elif dtype == "duration_value":
             if isinstance(item, np.timedelta64):
                 item = item.astype(datetime.timedelta)
             d = Duration()
             d.FromTimedelta(item)
-            tuple_arr.append(io_descriptors_pb2.Value(**{"duration_": d}))
-        elif dtype == "array_":
+            tuple_arr.append(payload_pb2.Value(**{"duration_value": d}))
+        elif dtype == "array_value":
             if not all(isinstance(x, type(item[0])) for x in item):
                 val = create_tuple_proto(item)
-                tuple_arr.append(io_descriptors_pb2.Value(tuple_=val))
+                tuple_arr.append(payload_pb2.Value(tuple_value=val))
             else:
                 val = arr_to_proto(item)
-                tuple_arr.append(io_descriptors_pb2.Value(array_=val))
+                tuple_arr.append(payload_pb2.Value(array_value=val))
         else:
-            tuple_arr.append(io_descriptors_pb2.Value(**{f"{dtype}": item}))
+            tuple_arr.append(payload_pb2.Value(**{f"{dtype}": item}))
 
-    return io_descriptors_pb2.Tuple(value_=tuple_arr)
+    return payload_pb2.Tuple(value=tuple_arr)
+
 
 def arr_to_proto(arr):
     """
     Convert given list or array to protobuf
     """
-    import datetime
-
     import numpy as np
-    import io_descriptors_pb2
     from google.protobuf.duration_pb2 import Duration
     from google.protobuf.timestamp_pb2 import Timestamp
+
+    import payload_pb2
 
     if len(arr) == 0:
         raise ValueError("Provided array is either empty or invalid.")
@@ -106,7 +104,7 @@ def arr_to_proto(arr):
     if not dtype:
         raise ValueError("Dtype is not supported.")
 
-    if dtype == "timestamp_":
+    if dtype == "timestamp_value":
         timestamp_arr = []
         for dt in arr:
             if isinstance(dt, np.datetime64):
@@ -116,41 +114,33 @@ def arr_to_proto(arr):
             t = Timestamp()
             t.FromDatetime(dt)
             timestamp_arr.append(t)
-        return io_descriptors_pb2.NumpyNdarray(
-            dtype="timestamp_", timestamp_=timestamp_arr
-        )
-    elif dtype == "duration_":
+        return payload_pb2.Array(timestamp_value=timestamp_arr)
+    elif dtype == "duration_value":
         duration_arr = []
         for td in arr:
             if isinstance(td, np.timedelta64):
                 td = td.astype(datetime.timedelta)
             d = Duration()
             d.FromTimedelta(td)
-            duration_arr.append(d)
-        return io_descriptors_pb2.NumpyNdarray(
-            dtype="duration_", duration_=duration_arr
-        )
-    elif dtype != "array_":
-        return io_descriptors_pb2.NumpyNdarray(**{"dtype": dtype, f"{dtype}": arr})
+            duration_arr.append(t)
+        return payload_pb2.Array(duration_value=duration_arr)
+    elif dtype != "array_value":
+        return payload_pb2.Array(**{f"{dtype}": arr})
 
     return_arr = []
     is_tuple = False
-    for i in range(len(arr)):
-        if not all(isinstance(x, type(arr[i][0])) for x in arr[i]):
+    for item in arr:
+        if not all(isinstance(x, type(item[0])) for x in item):
             is_tuple = True
-            val = create_tuple_proto(arr[i])
+            val = create_tuple_proto(item)
         else:
-            val = arr_to_proto(arr[i])
+            val = arr_to_proto(item)
         return_arr.append(val)
 
     if is_tuple:
-        return_arr = io_descriptors_pb2.NumpyNdarray(
-            dtype="tuple_", tuple_=return_arr
-        )
+        return_arr = payload_pb2.Array(tuple_value=return_arr)
     else:
-        return_arr = io_descriptors_pb2.NumpyNdarray(
-            dtype="array_", array_=return_arr
-        )
+        return_arr = payload_pb2.Array(array_value=return_arr)
 
     return return_arr
 
@@ -162,33 +152,52 @@ def handle_tuple(proto_tuple):
     from google.protobuf.duration_pb2 import Duration
     from google.protobuf.timestamp_pb2 import Timestamp
 
-    import io_descriptors_pb2
+    import payload_pb2
 
-    tuple_arr = [i for i in getattr(proto_tuple, "value_")]
+    tuple_arr = [i for i in getattr(proto_tuple, "value")]
 
     if not tuple_arr:
         raise ValueError("Provided tuple is either empty or invalid.")
 
     return_arr = []
 
-    for i in range(len(tuple_arr)):
-        val = getattr(tuple_arr[i], tuple_arr[i].WhichOneof("dtype"))
+    for item in tuple_arr:
+        val = getattr(item, item.WhichOneof("value"))
 
         if not val:
-            raise ValueError("Provided protobuf tuple doesn't have a value.")
+            raise ValueError("Provided protobuf tuple is missing a value.")
 
-        if tuple_arr[i].WhichOneof("dtype") == "timestamp_":
+        if item.WhichOneof("value") == "timestamp_value":
             val = Timestamp.ToDatetime(val)
-        elif tuple_arr[i].WhichOneof("dtype") == "duration_":
+        elif item.WhichOneof("value") == "duration_value":
             val = Duration.ToTimedelta(val)
 
-        if isinstance(val, io_descriptors_pb2.NumpyNdarray):
+        if isinstance(val, payload_pb2.Array):
             val = proto_to_arr(val)
-        elif isinstance(val, io_descriptors_pb2.Tuple):
+        elif isinstance(val, payload_pb2.Tuple):
             val = handle_tuple(val)
         return_arr.append(val)
 
     return return_arr
+
+
+def WhichArray(proto_arr):
+    import payload_pb2
+
+    if not proto_arr:
+        return ""
+
+    arr_types = [field.name for field in payload_pb2.Array.DESCRIPTOR.fields]
+
+    return_type = ""
+    for arr_type in arr_types:
+        if len(getattr(proto_arr, arr_type)) != 0:
+            if not return_type:
+                return_type = arr_type
+            else:
+                raise ValueError("More than one repeated Array fields contain data.")
+
+    return return_type
 
 
 def proto_to_arr(proto_arr):
@@ -198,30 +207,32 @@ def proto_to_arr(proto_arr):
     from google.protobuf.duration_pb2 import Duration
     from google.protobuf.timestamp_pb2 import Timestamp
 
-    import io_descriptors_pb2
+    import payload_pb2
 
-    return_arr = [i for i in getattr(proto_arr, proto_arr.dtype)]
+    array_type = WhichArray(proto_arr)
+    if not array_type:
+        raise ValueError("Provided array is either empty or invalid.")
 
-    if proto_arr.dtype == "timestamp_":
+    return_arr = [i for i in getattr(proto_arr, array_type)]
+
+    if array_type == "timestamp_value":
         return_arr = [Timestamp.ToDatetime(dt) for dt in return_arr]
-    elif proto_arr.dtype == "duration_":
+    elif array_type == "duration_value":
         return_arr = [Duration.ToTimedelta(td) for td in return_arr]
 
-    if not return_arr:
-        raise ValueError("Provided array is either empty or invalid")
-
-    for i in range(len(return_arr)):
-        if isinstance(return_arr[i], io_descriptors_pb2.NumpyNdarray):
-            return_arr[i] = proto_to_arr(return_arr[i])
-        elif isinstance(return_arr[i], io_descriptors_pb2.Tuple):
-            return_arr[i] = handle_tuple(return_arr[i])
+    for i, item in enumerate(return_arr):
+        if isinstance(item, payload_pb2.Array):
+            return_arr[i] = proto_to_arr(item)
+        elif isinstance(item, payload_pb2.Tuple):
+            return_arr[i] = handle_tuple(item)
 
     return return_arr
+
 
 def is_key_supported(data):
     import numpy as np
 
-    supported_keytypes={
+    supported_keytypes = {
         np.int32: "sint32_",
         np.int64: "sint64_",
         np.uint32: "uint32_",
@@ -238,17 +249,17 @@ def is_key_supported(data):
 
     return found_keytype
 
+
 def create_series_proto(pd_series):
     """{0: 'tom', 1: 'nick', 2: 'juli'}"""
-    import datetime
     import numpy as np
     from google.protobuf.duration_pb2 import Duration
     from google.protobuf.timestamp_pb2 import Timestamp
 
-    import io_descriptors_pb2
+    import payload_pb2
 
-    index_type=""
-    return_dict={}
+    index_type = ""
+    return_dict = {}
     for index in pd_series:
         if not is_key_supported(index):
             raise ValueError("Invalid datatype for index.")
@@ -268,29 +279,32 @@ def create_series_proto(pd_series):
                 item = datetime.datetime(item.year, item.month, item.day)
             t = Timestamp()
             t.FromDatetime(item)
-            return_dict[index] = io_descriptors_pb2.Value(**{"timestamp_": t})
+            return_dict[index] = payload_pb2.Value(**{"timestamp_": t})
         elif value_type == "duration_":
             if isinstance(item, np.timedelta64):
                 item = item.astype(datetime.timedelta)
             d = Duration()
             d.FromTimedelta(item)
-            return_dict[index] = io_descriptors_pb2.Value(**{"duration_": d})
+            return_dict[index] = payload_pb2.Value(**{"duration_": d})
         elif value_type == "array_":
             if not all(isinstance(x, type(item[0])) for x in item):
                 val = create_tuple_proto(item)
-                return_dict[index] = io_descriptors_pb2.Value(tuple_=val)
+                return_dict[index] = payload_pb2.Value(tuple_=val)
             else:
                 val = arr_to_proto(item)
-                return_dict[index] = io_descriptors_pb2.Value(array_=val)
+                return_dict[index] = payload_pb2.Value(array_=val)
         else:
-            return_dict[index] = io_descriptors_pb2.Value(**{f"{value_type}": pd_series[index]})
+            return_dict[index] = payload_pb2.Value(
+                **{f"{value_type}": pd_series[index]}
+            )
 
-    return io_descriptors_pb2.Series(**{"keytype":index_type,f"{index_type}":return_dict})
+    return payload_pb2.Series(**{"keytype": index_type, f"{index_type}": return_dict})
     ...
-def df_to_proto(df):
-    import io_descriptors_pb2
 
-    """{'a': {0: 'tom', 1: 'nick', 2: 'juli'}, 'b': {0: 10, 1: 15, 2: 14}, 'c': {0: 1.1, 1: 1.1, 2: 1.1}}"""
+
+def df_to_proto(df):
+    import payload_pb2
+
     dict_df = df.to_dict()
     return_dict = {}
     column_type = ""
@@ -302,14 +316,19 @@ def df_to_proto(df):
         elif is_key_supported(key) != column_type:
             raise ValueError("Mixed datatype columns are not supported.")
         series_proto = create_series_proto(dict_df[key])
-        return_dict[key]=series_proto
+        return_dict[key] = series_proto
 
-    return io_descriptors_pb2.Dataframe(**{"keytype":column_type, f"{column_type}":return_dict})
+    return payload_pb2.Dataframe(
+        **{"keytype": column_type, f"{column_type}": return_dict}
+    )
+
 
 def handle_series(proto_series):
     from google.protobuf.duration_pb2 import Duration
     from google.protobuf.timestamp_pb2 import Timestamp
-    import io_descriptors_pb2
+
+    import payload_pb2
+
     series_data = getattr(proto_series, f"{proto_series.keytype}")
     series_dict = {}
 
@@ -324,20 +343,21 @@ def handle_series(proto_series):
         elif series_data[index].WhichOneof("dtype") == "duration_":
             val = Duration.ToTimedelta(val)
 
-        if isinstance(val, io_descriptors_pb2.NumpyNdarray):
+        if isinstance(val, payload_pb2.NumpyNdarray):
             val = proto_to_arr(val)
-        elif isinstance(val, io_descriptors_pb2.Tuple):
+        elif isinstance(val, payload_pb2.Tuple):
             val = handle_tuple(val)
         series_dict[index] = val
 
     return series_dict
 
+
 def proto_to_df(proto_df):
     import pandas as pd
-    proto_df = getattr(proto_df,f"{proto_df.keytype}")
-    df_dict={}
+
+    proto_df = getattr(proto_df, f"{proto_df.keytype}")
+    df_dict = {}
     for key in proto_df:
-        series_dict=handle_series(proto_df[key])
+        series_dict = handle_series(proto_df[key])
         df_dict[key] = series_dict
     return pd.DataFrame(df_dict)
-    

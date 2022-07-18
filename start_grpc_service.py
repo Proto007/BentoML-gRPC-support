@@ -1,4 +1,5 @@
 import sys
+
 import bentoml
 
 """
@@ -37,16 +38,13 @@ except:
 import subprocess
 
 subprocess.run(
-    "python -m grpc_tools.protoc -I./protos --python_out=. protos/io_descriptors.proto",
-    shell = True
+    "python -m grpc_tools.protoc -I./protos --python_out=. protos/payload.proto",
+    shell=True,
 )
 
 subprocess.run(
-    "python -m grpc_tools.protoc -I./protos --python_out=. --grpc_python_out=. protos/bentoml_service.proto",
-    shell = True
+    "python -m grpc_tools.protoc -I./protos --python_out=. --grpc_python_out=. protos/service.proto",
+    shell=True,
 )
 
-subprocess.run(
-    f"python server.py {sys.argv[1]}",
-    shell=True
-)
+subprocess.run(f"python server.py {sys.argv[1]}", shell=True)
