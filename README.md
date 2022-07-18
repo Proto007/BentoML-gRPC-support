@@ -1,5 +1,5 @@
 # Update:
-Suggested two ways to do represent pandas. Using maps or arrays.
+Suggested two ways to represent pandas. Using maps or arrays.
 
 # BentoML-gRPC-support
 This repository shows progress to extend bentoML service using gRPC.
